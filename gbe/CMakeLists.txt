@@ -4,6 +4,6 @@
 cmake_minimum_required (VERSION 3.8)
 
 # Add source to this project's executable.
-add_executable (gbe "gbe.cpp" "gbe.h" "cpu.cpp" "cpu.h" "memory.h" "memory.cpp")
+add_executable (gbe "gbe.cpp" "gbe.h" "cpu.cpp" "cpu.h" "bus.h" "bus.cpp")
 
 # TODO: Add tests and install targets if needed.

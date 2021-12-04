@@ -11,5 +11,4 @@ public:
 private:
 	uint8_t A, B, C, D, E, F, H, L;
 	uint16_t SP, PC;
-	Memory* bus;
 };
