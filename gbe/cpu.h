@@ -17,4 +17,7 @@ private:
 			E = 0, F = 0, H = 0, L = 0;
 	uint16_t SP = 0, PC = 0;
 	Bus* bus = nullptr;
+	uint64_t clock = 0;
+	uint8_t opcode = 0;
+
 };

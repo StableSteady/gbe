@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <stack>
 
 #include "cpu.h"
 
@@ -14,5 +15,6 @@ public:
 
 private:
 	std::array<uint8_t, 65536> mem{0};
+	std::stack<uint16_t> stack;
 	CPU cpu;
 };
