@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 class Bus;
 
@@ -25,12 +26,12 @@ private:
 	uint8_t opcode = 0;
 
 	//disassembly tables
-	std::array<uint8_t&, 8> r{ B, C, D, E, H, L, read(HL), A };
-	std::array<uint16_t&, 4> rp{BC, DE, HL, SP};
-	std::array<uint16_t&, 4> rp2{ BC, DE, HL, AF };
-	std::array<bool, 4> cc{ !z, z, !c, c };
-	std::array<void (CPU::*)(uint8_t), 8> alu{};
-	std::array<void (CPU::*)(uint8_t), 8> rot{};
+	std::vector<uint8_t*> r = { &B, &C, &D, &E, &H, &L, &read(HL), &A };
+	std::vector<uint16_t*> rp{ &BC, &DE, &HL, &SP};
+	std::vector<uint16_t*> rp2{ &BC, &DE, &HL, &AF };
+	std::vector<bool> cc{ !z, z, !c, c };
+	std::vector<void (CPU::*)(uint8_t)> alu{};
+	std::vector<void (CPU::*)(uint8_t)> rot{};
 
 	//instruction set
 	//8-bit arithmetic and logic
