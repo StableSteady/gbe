@@ -2,6 +2,7 @@
 #include "bus.h"
 
 CPU::CPU() {
+	flag.set(&AF);
 }
 
 void CPU::connect(Bus* b) {
@@ -19,7 +20,7 @@ void CPU::write(uint16_t address, uint8_t data) {
 }
 
 void CPU::fetch() {
-	opcode = read(PC++);
+	opcode = read(PC.reg++);
 }
 
 void CPU::execute() {
@@ -236,8 +237,8 @@ void CPU::NOP() {
 }
 
 void CPU::LD_nn_SP() {
-	uint8_t n = read(PC++);
-	uint16_t nn = (read(PC++) << 8) & n;
+	uint8_t n = read(PC.reg++);
+	uint16_t nn = (read(PC.reg++) << 8) & n;
 	write(nn, SP & 0xFF);
 	write(nn + 1, SP >> 8);
 }
@@ -248,21 +249,21 @@ void CPU::STOP() {
 
 void CPU::JR_d() {
 	++clock;
-	int8_t e = read(PC++);
-	PC += e;
+	int8_t e = read(PC.reg++);
+	PC.reg += e;
 }
 
 void CPU::JR_cc_d(int y) {
-	int8_t e = read(PC++);
+	int8_t e = read(PC.reg++);
 	if (cc[y - 4]) {
 		++clock;
-		PC += e;
+		PC.reg += e;
 	}
 }
 
 void CPU::LD_rp_nn(int p) {
-	uint8_t n = read(PC++);
-	uint16_t nn = (read(PC++) << 8) & n;
+	uint8_t n = read(PC.reg++);
+	uint16_t nn = (read(PC.reg++) << 8) & n;
 	*rp[p] = nn;
 }
 
