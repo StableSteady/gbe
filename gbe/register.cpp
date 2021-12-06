@@ -14,16 +14,37 @@ void Register::set(uint16_t r16) {
 	high = (r16 >> 8);
 }
 
+uint16_t Register::get() {
+	this->set();
+	return reg;
+}
+
+uint16_t Register::operator++() {
+	this->set(++reg);
+	return reg;
+}
+
+uint16_t Register::operator++(int) {
+	uint16_t oldReg = reg;
+	++*this;
+	return oldReg;
+}
+
+Register& Register::operator+=(const uint16_t& rhs) {
+	this->set(reg+rhs);
+	return *this;
+}
+
 Flags::Flags() {
 
 }
 
 void Flags::set(Register* AF) {
 	reg = AF;
-	_zero = (bool)AF->low & 0x80;
-	_BCD_sub = (bool)AF->low & 0x40;
-	_BCD_half_carry = (bool)AF->low & 0x20;
-	_carry = (bool)AF->low & 0x10;
+	_zero = (bool)(AF->low & 0x80);
+	_BCD_sub = (bool)(AF->low & 0x40);
+	_BCD_half_carry = (bool)(AF->low & 0x20);
+	_carry = (bool)(AF->low & 0x10);
 }
 
 void Flags::zero(bool state) {

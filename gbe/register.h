@@ -7,10 +7,16 @@ public:
 	Register();
 	void set();
 	void set(uint16_t r16);
+	uint16_t get();
+	uint16_t operator++(); //prefix
+	uint16_t operator++(int); //postfix
+	Register& operator+=(const uint16_t& rhs);
 
-	uint16_t reg = 0;
 	uint8_t high = 0;
 	uint8_t low = 0;
+
+private:
+	uint16_t reg = 0;
 };
 
 class Flags {
