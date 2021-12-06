@@ -13,7 +13,6 @@ public:
 	uint8_t& read(uint16_t address);
 	void write(uint16_t address, uint8_t data);
 	void fetch();
-	void decode();
 	void execute();
 
 private:
@@ -27,12 +26,13 @@ private:
 
 	//disassembly tables
 	std::vector<uint8_t*> r = { &B, &C, &D, &E, &H, &L, &read(HL), &A };
-	std::vector<uint16_t*> rp{ &BC, &DE, &HL, &SP};
-	std::vector<uint16_t*> rp2{ &BC, &DE, &HL, &AF };
-	std::vector<bool> cc{ !z, z, !c, c };
+	std::vector<uint16_t*> rp = { &BC, &DE, &HL, &SP};
+	std::vector<uint16_t*> rp2 = { &BC, &DE, &HL, &AF };
+	std::vector<bool> cc = { !z, z, !c, c };
 	std::vector<void (CPU::*)(uint8_t)> alu{};
 	std::vector<void (CPU::*)(uint8_t)> rot{};
 
 	//instruction set
-	//8-bit arithmetic and logic
+	void NOP(); void LD_nn_SP(); void STOP(); void JR_d(); void JR_cc_d(int y); void LD_rp_nn(int p);
+	void ADD_HL_rp();
 };
