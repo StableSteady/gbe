@@ -11,6 +11,8 @@ public:
 	uint16_t operator++(); //prefix
 	uint16_t operator++(int); //postfix
 	Register& operator+=(const uint16_t& rhs);
+	uint16_t operator--(); 
+	uint16_t operator--(int); 
 
 	uint8_t high = 0;
 	uint8_t low = 0;
@@ -23,14 +25,19 @@ class Flags {
 public:
 	Flags();
 	void set(Register* AF);
-	void zero(bool state);
-	void BCD_sub(bool state);
-	void BCD_half_carry(bool state);
-	void carry(bool state);
+	void z(int state);
+	void n(int state);
+	void h(int state);
+	void c(int state);
+	int z(); 
+	int n();
+	int h(); 
+	int c();
 
+private:
 	Register* reg = nullptr;
-	bool _zero = false;
-	bool _BCD_sub = false;
-	bool _BCD_half_carry = false;
-	bool _carry = false;
+	int Z = 0;
+	int N = 0;
+	int H = 0;
+	int C = 0;
 };
