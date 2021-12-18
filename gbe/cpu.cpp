@@ -233,6 +233,14 @@ void CPU::execute() {
 	}
 }
 
+void CPU::DI() {
+	IME = false;
+}
+
+void CPU::EI() {
+	EI_FLAG = false;
+}
+
 void CPU::LD_n16_SP(uint16_t n16) {
 	write(n16, SP.get() & 0xFF);
 	write(n16 + 1, SP.get() >> 8);
@@ -243,12 +251,71 @@ void CPU::LD_A_HLI() {
 	++HL;
 }
 
+void CPU::LD_HL_SPe8() {
+	uint16_t addend = SP.get() + (int8_t)read(PC++);
+	flag.z(0);
+	flag.n(0);
+	flag.h((int)((HL.get() & 0xfff) + (addend & 0xfff) > 0xfff));
+	flag.c((((uint32_t)HL.get() + addend) >> 16) & 1);
+	HL += addend;
+	++clock;
+}
+
 void CPU::NOP() {
 
 }
 
+void CPU::OR_A_r8(int z) {
+	AF.high |= *r[z];
+	flag.z((int)AF.high);
+	flag.n(0);
+	flag.h(0);
+	flag.c(0);
+}
+
+void CPU::POP_r16(int p) {
+	rp2[p]->low = read(SP++);
+	rp2[p]->high = read(SP++);
+}
+
 void CPU::STOP() {
 
+}
+
+void CPU::SUB_A_r8(int z) {
+	uint8_t subtrahend = *r[z];
+	flag.n(1);
+	flag.h((int)((subtrahend & 0xF) > (AF.high & 0xF)));
+	flag.c((int)(AF.high < subtrahend));
+	AF.high -= subtrahend;
+	flag.z((int)(AF.high == 0));
+}
+
+void CPU::XOR_A_r8(int z) {
+	AF.high ^= *r[z];
+	flag.z((int)AF.high);
+	flag.n(0);
+	flag.h(0);
+	flag.c(0);
+}
+
+void CPU::JP_cc_n16(int y) {
+	uint16_t n16 = read(PC++);
+	n16 |= (read(PC++) << 8);
+	if (cc[y]) {
+		++clock;
+		PC.set(n16);
+	}
+}
+
+void CPU::JP_n16() {
+	uint16_t n16 = read(PC++);
+	n16 |= (read(PC++) << 8);
+	PC.set(n16);
+}
+
+void CPU::JP_HL() {
+	PC.set(HL.get());
 }
 
 void CPU::JR_e8(uint8_t e8) {
@@ -256,7 +323,8 @@ void CPU::JR_e8(uint8_t e8) {
 	PC += e8;
 }
 
-void CPU::JR_cc_e8(uint8_t e8, int y) {
+void CPU::JR_cc_e8(int y) {
+	int8_t e8 = read(PC++);
 	if (cc[y - 4]) {
 		++clock;
 		PC += e8;
@@ -267,25 +335,88 @@ void CPU::LD_r8_n8(uint8_t n8, int y) {
 	*r[y] = n8;
 }
 
-void CPU::LD_r16_n16(int p, uint16_t n16) {
-	rp[p]->set(n16);
+void CPU::LD_r8_r8(int y, int z) {
+	*r[y] = *r[z];
+}
+
+void CPU::LD_r16_n16(int p) {
+	rp[p]->low = read(PC++);
+	rp[p]->high = read(PC++);
 }
 
 void CPU::LD_r16_A(int p) {
 	write(rp[p]->get(), AF.high);
 }
 
+void CPU::LDH_n16_A() {
+	uint16_t n16 = 0xFF00 + read(PC++);
+	write(n16, AF.high);
+}
+
 void CPU::LD_A_r16(int p) {
 	AF.high = read(rp[p]->get());
+}
+
+void CPU::LD_SP_HL() {
+	++clock;
+	SP.set(HL.get());
+}
+
+void CPU::ADD_A_r8(int z) {
+	uint8_t addend = *r[z];
+	flag.n(0);
+	flag.h((int)((addend & 0xF) + (AF.high & 0xF) > 0xF));
+	flag.c((((uint16_t)AF.high + addend) >> 8) & 1);
+	AF.high += addend;
+	flag.z((int)(AF.high == 0));
+}
+
+void CPU::ADC_A_r8(int z) {
+	uint8_t addend = *r[z] + flag.c();
+	flag.n(0);
+	flag.h((int)((addend & 0xF) + (AF.high & 0xF) > 0xF));
+	flag.c((((uint16_t)AF.high + addend) >> 8) & 1);
+	AF.high += addend;
+	flag.z((int)(AF.high == 0));
 }
 
 void CPU::ADD_HL_r16(int p) {
 	uint16_t addend = rp[p]->get();
 	flag.n(0);
 	flag.h((int)((HL.get() & 0xfff) + (addend & 0xfff) > 0xfff));
-	flag.c(((uint32_t)(HL.get() + addend) >> 16) & 1);
+	flag.c((((uint32_t)HL.get() + addend) >> 16) & 1);
 	HL += addend;
 	++clock;
+}
+
+void CPU::ADD_SP_e8() {
+	int addend = read(PC++);
+	clock += 2;
+	flag.z(0);
+	flag.n(0);
+	flag.h((int)((SP.get() & 0xfff) + (addend & 0xfff) > 0xfff));
+	flag.c((((uint32_t)SP.get() + addend) >> 16) & 1);
+	SP += addend;
+}
+
+void CPU::AND_A_r8(int z) {
+	AF.high &= *r[z];
+	flag.z((int)AF.high);
+	flag.n(0);
+	flag.h(1);
+	flag.c(0);
+}
+
+void CPU::LD_A_n16() {
+	uint16_t n16 = read(PC++);
+	n16 |= (read(PC++) << 8);
+	AF.high = read(n16);
+}
+
+void CPU::LD_n16_A() {
+	uint16_t n16 = read(PC++);
+	n16 |= (read(PC++) << 8);
+	write(n16, AF.high);
 }
 
 void CPU::LD_HLI_A() {
@@ -295,6 +426,19 @@ void CPU::LD_HLI_A() {
 
 void CPU::LD_HLD_A() {
 	write(HL.get(), AF.high);
+}
+
+void CPU::LDH_A_C() {
+	AF.high = read(0xFF00 | BC.low);
+}
+
+void CPU::LDH_A_n16() {
+	uint16_t n16 = 0xFF00 + read(PC++);
+	AF.high = read(n16);
+}
+
+void CPU::LDH_C_A() {
+	write(0xFF00 | BC.low, AF.high);
 }
 
 void CPU::LD_A_HLD() {
@@ -308,6 +452,10 @@ void CPU::INC_r16(int p) {
 
 void CPU::DEC_r16(int p) {
 	--* rp[p];
+}
+
+void CPU::HALT() {
+
 }
 
 void CPU::INC_r8(int y) {
@@ -373,10 +521,81 @@ void CPU::RRCA() {
 	AF.high = ((AF.high & 1) << 7) | (AF.high >> 1);
 }
 
+void CPU::SBC_A_r8(int z) {
+	uint8_t subtrahend = *r[z] + flag.c();
+	flag.n(1);
+	flag.h((int)((subtrahend & 0xF) > (AF.high & 0xF)));
+	flag.c((int)(AF.high < subtrahend));
+	AF.high -= subtrahend;
+	flag.z((int)(AF.high == 0));
+}
+
 void CPU::SCF() {
 	flag.c(1);
 }
 
 void CPU::CCF() {
 	flag.c(~flag.c());
+}
+
+void CPU::CP_A_r8(int z) {
+	uint8_t subtrahend = *r[z];
+	flag.n(1);
+	flag.h((int)((subtrahend & 0xF) > (AF.high & 0xF)));
+	flag.c((int)(AF.high < subtrahend));
+	flag.z((int)(AF.high - subtrahend == 0));
+}
+
+void CPU::RET() {
+	++clock;
+	PC.low = read(SP++);
+	PC.high = read(SP++);
+}
+
+void CPU::RETI() {
+	++clock;
+	PC.low = read(SP++);
+	PC.high = read(SP++);
+	IME = true;
+}
+
+void CPU::RET_cc(int y) {
+	++clock;
+	if (cc[y]) {
+		++clock;
+		PC.low = read(SP++);
+		PC.high = read(SP++);
+	}
+}
+
+void CPU::PUSH_r16(int p) {
+	SP--;
+	write(SP.get(), rp2[p]->high);
+	SP--;
+	write(SP.get(), rp2[p]->low);
+	++clock;
+}
+
+void CPU::CALL_n16() {
+	uint16_t n16 = read(PC++);
+	n16 |= (read(PC++) << 8);
+	SP--;
+	write(SP.get(), PC.high);
+	SP--;
+	write(SP.get(), PC.low);
+	PC.set(n16);
+	++clock;
+}
+
+void CPU::CALL_cc_n16(int y) {
+	uint16_t n16 = read(PC++);
+	n16 |= (read(PC++) << 8);
+	if (cc[y]) {
+		SP--;
+		write(SP.get(), PC.high);
+		SP--;
+		write(SP.get(), PC.low);
+		PC.set(n16);
+		++clock;
+	}
 }

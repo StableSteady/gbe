@@ -5,7 +5,7 @@ Register::Register() {
 }
 
 void Register::set() {
-	reg = (high << 8) & low;
+	reg = (high << 8) | low;
 }
 
 void Register::set(uint16_t r16) {
